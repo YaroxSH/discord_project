@@ -37,22 +37,29 @@ class Bot_things(commands.Cog):
             cur.close()
             await ctx.send('Данные успешно сохранены.')
         except sqlite3.Error:
-            await ctx.send('Запрос не был принят, если вы не знаете как правильно писать команды введите "!#help_b".')
+            await ctx.send('Запрос не был принят, если вы не знаете как правильно писать команды введите "!#help".')
 
-    @commands.command(name='help_b')
-    async def help_b(self, ctx):
-        await ctx.send('''Тут записан формат записи команд данного бота:
-            !#archivate "имя архива"  "важность архива(от 1 до 10)"  "содержание архива"''')
-
+    @commands.command(name='show')
     async def show(self, ctx, type, *args):
         con = sqlite3.connect('archive_bd')
         cur = con.cursor()
+        no_res = False
         if type == 'rank':
-            pass
+            res = cur.execute("""SELECT name, context, rank FROM archive""").fetchall()
+            res = sorted(res, key=lambda x: x[2], reverse=True)
         elif type == 'name':
-            pass
+            res = cur.execute("""SELECT name, context FROM archive WHERE name = ?""", args).fetchall()
         elif type == 'search':
-            pass
+            args = ' '.join(args)
+            res = cur.execute("""SELECT name, context FROM archive""").fetchall()
+            res = list(map(lambda x: x if args in x[0] else '', res))
+        elif type == 'all':
+            res = cur.execute("""SELECT name, context FROM archive""").fetchall()
+        else:
+            await ctx.send('Запрос не был принят, если вы не знаете как правильно писать команды введите "!#help".')
+            no_res = True
+        if not no_res:
+            await ctx.send(res)
 
 
 bot = commands.Bot(command_prefix='!#', intents=intents)
