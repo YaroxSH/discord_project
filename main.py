@@ -36,35 +36,64 @@ class Bot_things(commands.Cog):
             con.commit()
             cur.close()
             await ctx.send('Данные успешно сохранены.')
-        except sqlite3.Error:
-            await ctx.send('Запрос не был принят, если вы не знаете как правильно писать команды введите "!#help".')
+        except sqlite3.Error as err:
+            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
 
     @commands.command(name='show')
     async def show(self, ctx, type, *args):
         con = sqlite3.connect('archive_bd')
         cur = con.cursor()
         no_res = False
-        if type == 'rank':
-            res = cur.execute("""SELECT name, context, rank FROM archive""").fetchall()
-            res = sorted(res, key=lambda x: x[2], reverse=True)
-            res = list(map(lambda x: (str(x[2]), x[0], x[1]), res))
-        elif type == 'name':
-            res = cur.execute("""SELECT name, context FROM archive WHERE name = ?""", args).fetchall()
-        elif type == 'search':
-            args = ' '.join(args)
-            res = cur.execute("""SELECT name, context FROM archive""").fetchall()
-            res = list(map(lambda x: x if args in x[0] else '', res))
-        elif type == 'all':
-            res = cur.execute("""SELECT name, context FROM archive""").fetchall()
-        else:
-            await ctx.send('Запрос не был принят, если вы не знаете как правильно писать команды введите "!#help".')
+        try:
+            if type == 'rank':
+                res = cur.execute("""SELECT name, context, rank FROM archive""").fetchall()
+                res = sorted(res, key=lambda x: x[2], reverse=True)
+                res = list(map(lambda x: (str(x[2]), x[0], x[1]), res))
+            elif type == 'name':
+                res = cur.execute("""SELECT name, context FROM archive WHERE name = ?""", args).fetchall()
+            elif type == 'search':
+                args = ' '.join(args)
+                res = cur.execute("""SELECT name, context FROM archive""").fetchall()
+                res = list(map(lambda x: x if args in x[0] else '', res))
+            elif type == 'all':
+                res = cur.execute("""SELECT name, context FROM archive""").fetchall()
+        except sqlite3.Error as err:
+            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
             no_res = True
+        con.commit()
+        cur.close()
         if not no_res:
             hum_res = '\n'.join(list(map(lambda x: ' : '.join(x), res)))
             await ctx.send(hum_res)
 
+    @commands.command(name='delete')
+    async def delete(self, ctx, *args):
+        con = sqlite3.connect('archive_bd')
+        cur = con.cursor()
+        try:
+            self.reser = cur.execute("SELECT name, context FROM archive WHERE name = ?", args).fetchall()
+            res = cur.execute("DELETE FROM archive WHERE name = ?", args)
+            await ctx.send(f'Данные под именем {args} были успешно удалены.')
+        except sqlite3.Error as err:
+            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
+        con.commit()
+        cur.close()
 
-bot = commands.Bot(command_prefix='!#', intents=intents)
+    @commands.command(name='runback')
+    async def runback(self, ctx):
+        con = sqlite3.connect('archive_bd')
+        cur = con.cursor()
+        try:
+            res = cur.execute("""INSERT INTO archive (id, name, context, rank) VALUES (?, ?, ?)""",
+                              (self.reser[0], self.reser[1], self.reser[2], self.reser[3]))
+            await ctx.send('Удаленые было успешно удалено.')
+        except sqlite3.Error as err:
+            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
+        con.commit()
+        cur.close()
+
+
+bot = commands.Bot(command_prefix='!#', intents=intents, help_command=commands.MinimalHelpCommand())
 
 
 async def main():
