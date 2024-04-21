@@ -47,6 +47,7 @@ class Bot_things(commands.Cog):
         if type == 'rank':
             res = cur.execute("""SELECT name, context, rank FROM archive""").fetchall()
             res = sorted(res, key=lambda x: x[2], reverse=True)
+            res = list(map(lambda x: (str(x[2]), x[0], x[1]), res))
         elif type == 'name':
             res = cur.execute("""SELECT name, context FROM archive WHERE name = ?""", args).fetchall()
         elif type == 'search':
@@ -59,7 +60,8 @@ class Bot_things(commands.Cog):
             await ctx.send('Запрос не был принят, если вы не знаете как правильно писать команды введите "!#help".')
             no_res = True
         if not no_res:
-            await ctx.send(res)
+            hum_res = '\n'.join(list(map(lambda x: ' : '.join(x), res)))
+            await ctx.send(hum_res)
 
 
 bot = commands.Bot(command_prefix='!#', intents=intents)
