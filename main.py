@@ -87,10 +87,11 @@ class Bot_things(commands.Cog):
         con = sqlite3.connect('archive_bd')
         cur = con.cursor()
         try:
-            file = open('reser.txt', 'r')
-            reser = eval(file.readline()[1:-1])
-            print(reser)
-            file.close()
+            with open('reser.txt', 'r+') as file:
+                reser = eval(file.readline()[1:-1])
+                file.seek(0)
+                file.truncate()
+                file.writelines(file.readlines()[0:-1])
             res = cur.execute("""INSERT INTO archive (name, context, rank) VALUES (?, ?, ?)""",
                               reser)
             await ctx.send('Удаленые данные были успешно возвращены.')
