@@ -72,9 +72,11 @@ class Bot_things(commands.Cog):
         cur = con.cursor()
         nm = ' '.join(args)
         try:
-            self.reser = cur.execute("""SELECT * FROM archive WHERE name = ?""", (nm,))
+            reser = cur.execute("""SELECT * FROM archive WHERE name = ?""", args).fetchall()
             res = cur.execute("""DELETE FROM archive WHERE name = ?""", (nm,))
             await ctx.send(f'Данные под именем {nm} были успешно удалены.')
+            with open('reser.txt', 'w') as file:
+                file.write(str(reser[0]))
         except sqlite3.Error as err:
             await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
         con.commit()
@@ -85,11 +87,15 @@ class Bot_things(commands.Cog):
         con = sqlite3.connect('archive_bd')
         cur = con.cursor()
         try:
-            res = cur.execute("""INSERT INTO archive (id, name, context, rank) VALUES (?, ?, ?)""",
-                              self.reser)
-            await ctx.send('Удаленые было успешно удалено.')
+            file = open('reser.txt', 'r')
+            reser = eval(file.readline()[1:-1])
+            print(reser)
+            file.close()
+            res = cur.execute("""INSERT INTO archive (name, context, rank) VALUES (?, ?, ?)""",
+                              reser)
+            await ctx.send('Удаленые данные были успешно возвращены.')
         except sqlite3.Error as err:
-            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
+            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}', err)
         con.commit()
         cur.close()
 
