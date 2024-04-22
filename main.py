@@ -70,10 +70,11 @@ class Bot_things(commands.Cog):
     async def delete(self, ctx, *args):
         con = sqlite3.connect('archive_bd')
         cur = con.cursor()
+        nm = ' '.join(args)
         try:
-            self.reser = cur.execute("SELECT name, context FROM archive WHERE name = ?", args).fetchall()
-            res = cur.execute("DELETE FROM archive WHERE name = ?", args)
-            await ctx.send(f'Данные под именем {args} были успешно удалены.')
+            self.reser = cur.execute("""SELECT * FROM archive WHERE name = ?""", (nm,))
+            res = cur.execute("""DELETE FROM archive WHERE name = ?""", (nm,))
+            await ctx.send(f'Данные под именем {nm} были успешно удалены.')
         except sqlite3.Error as err:
             await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
         con.commit()
@@ -85,7 +86,7 @@ class Bot_things(commands.Cog):
         cur = con.cursor()
         try:
             res = cur.execute("""INSERT INTO archive (id, name, context, rank) VALUES (?, ?, ?)""",
-                              (self.reser[0], self.reser[1], self.reser[2], self.reser[3]))
+                              self.reser)
             await ctx.send('Удаленые было успешно удалено.')
         except sqlite3.Error as err:
             await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
