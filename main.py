@@ -96,12 +96,34 @@ class Bot_things(commands.Cog):
                               reser)
             await ctx.send('Удаленые данные были успешно возвращены.')
         except sqlite3.Error as err:
-            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}', err)
+            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
+        con.commit()
+        cur.close()
+
+    @commands.command(name='change')
+    async def change(self, ctx, name, crat, *args):
+        con = sqlite3.connect('archive_bd')
+        cur = con.cursor()
+        srt = ' '.join(args)
+        try:
+            cur.execute(f'UPDATE archive SET {crat} = ? WHERE name = ?', (srt, name))
+            await ctx.send('Данные были изменены')
+        except sqlite3.Error as err:
+            await ctx.send(f'Запрос не был принят. {err.sqlite_errorname}')
         con.commit()
         cur.close()
 
 
-bot = commands.Bot(command_prefix='!#', intents=intents, help_command=commands.MinimalHelpCommand())
+class BotHelp(commands.MinimalHelpCommand):
+    async def send_pages(self):
+        destination = self.get_destination()
+        for page in self.paginator.pages:
+            emby = discord.Embed(description=page)
+            await destination.send(embed=emby)
+
+
+bot = commands.Bot(command_prefix='!#', intents=intents)
+bot.help_command = BotHelp()
 
 
 async def main():
